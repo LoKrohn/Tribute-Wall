@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .then(data => {
             const rows = parseCSV(data);
             const groupedData = groupEntries(rows);
-            const sortedData = sortByLastName(groupedData, 1); // Sort by Category 2 (index 1)
+            const sortedData = sortByLastName(groupedData, 1); // Sort by Column 2 (index 1)
             renderTable(sortedData, table);
             setupAlphabetNavigation(sortedData, table);
         })
@@ -37,10 +37,10 @@ function groupEntries(rows) {
         const row = rows[i];
         
         const donorName = row[0] ? row[0].split(";").join(", ") : ""; // Split semicolon-separated names into commas
-        const tributeName = row[1] ? row[1].split(";").join(", ") : ""; // Split semicolon-separated names into commas
-        const inHonorMemoryOf = row[2] || ""; // Keep the "In Honor/Memory Of:" column as is
+        const tributeName = row[2] ? row[2].split(";").join(", ") : ""; // Split semicolon-separated names into commas
+        const inHonorMemoryOf = row[1] || ""; // Keep the "In Honor/Memory Of:" column as is
 
-        groupedRows.push([donorName, tributeName, inHonorMemoryOf]);
+        groupedRows.push([donorName, inHonorMemoryOf, tributeName]);
     }
 
     return [header, ...groupedRows]; // Return new rows with the original header
@@ -69,9 +69,9 @@ function getLastWord(string) {
     return lastName;
 }
 
-// Render the table on the page with letter headers
+// Render the table on the page
 function renderTable(rows, table) {
-    table.innerHTML = ""; // Clear existing table content
+    table.innerHTML = "";
 
     const headerRow = document.createElement("tr");
     rows[0].forEach(headerText => {
@@ -81,32 +81,33 @@ function renderTable(rows, table) {
     });
     table.appendChild(headerRow);
 
-    let currentLetter = ""; // Track the current letter group
+    const alphabetHeaders = {}; // Store created alphabet header rows
 
-    rows.slice(1).forEach(row => {
-        const lastName = getLastWord(row[1]); // Extract last name from Tribute Name column
-        const firstLetter = lastName.charAt(0).toUpperCase(); // Get the first letter of the last name
+    rows.slice(1).forEach((row, index) => {
+        const lastName = getLastWord(row[1]); // Last name is in column 2 (index 1)
+        const firstLetter = lastName[0].toUpperCase(); // Get the first letter
 
-        // Insert a header row for a new letter group
-        if (firstLetter !== currentLetter) {
-            currentLetter = firstLetter;
+        if (!alphabetHeaders[firstLetter]) {
+            // Create a row with the first letter as the header
+            const alphabetRow = document.createElement("tr");
+            const alphabetCell = document.createElement("th");
+            alphabetCell.colSpan = rows[0].length;
+            alphabetCell.style.textAlign = "center";
+            alphabetCell.style.fontWeight = "bold";
+            alphabetCell.style.backgroundColor = "#003366";
+            alphabetCell.style.color = "#fff";
+            alphabetCell.style.fontSize = "1.2em";
+            alphabetCell.style.padding = "10px";
+            alphabetCell.innerHTML = `<a id="letter-${firstLetter}" href="#letter-${firstLetter}" style="color: white; text-decoration: none;">${firstLetter}</a>`;
+            alphabetRow.appendChild(alphabetCell);
+            table.appendChild(alphabetRow);
 
-            const letterRow = document.createElement("tr");
-            const letterCell = document.createElement("td");
-            letterCell.textContent = currentLetter;
-            letterCell.colSpan = row.length; // Span all columns
-            letterCell.style.backgroundColor = "#5091cd"; // CASPCA blue background
-            letterCell.style.color = "white"; // White text
-            letterCell.style.fontWeight = "bold"; // Bold text
-            letterCell.style.fontSize = "1.2em"; // Larger font size
-            letterCell.style.textAlign = "center"; // Center-align the text
-
-            letterRow.appendChild(letterCell);
-            table.appendChild(letterRow);
+            // Store the created header row to prevent duplicate rows
+            alphabetHeaders[firstLetter] = true;
         }
 
-        // Add the regular row for this entry
         const tableRow = document.createElement("tr");
+
         row.forEach(cellText => {
             const tableCell = document.createElement("td");
             tableCell.textContent = cellText;
@@ -117,27 +118,26 @@ function renderTable(rows, table) {
     });
 }
 
-
 // Setup alphabetical navigation
 function setupAlphabetNavigation(rows, table) {
     const navLinks = document.querySelectorAll("#alphabet-nav a");
-    const header = rows[0];
-    const body = rows.slice(1);
 
     navLinks.forEach(link => {
         link.addEventListener("click", event => {
             event.preventDefault();
             const letter = link.dataset.letter;
+            const target = document.getElementById(`letter-${letter}`);
 
-            const matchIndex = body.findIndex(row => {
-                const lastName = getLastWord(row[1]); // Updated to column index 1
-                return lastName.startsWith(letter);
-            });
-
-            if (matchIndex !== -1) {
-                const matchRow = table.rows[matchIndex + 1]; // Offset for header row
-                matchRow.scrollIntoView({ behavior: "smooth", block: "center" });
+            if (target) {
+                target.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start" // Align the header row at the top of the page
+                });
             }
         });
     });
 }
+
+
+
+
