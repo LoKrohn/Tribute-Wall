@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tribute Table</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Tributes to People</h1>
+    <!-- Alphabet Navigation -->
+    <div id="alphabet-nav">
+        <!-- Generate A-Z links -->
+        <script>
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            document.write(alphabet.split('').map(letter => `<a href="#" data-letter="${letter}">${letter}</a>`).join(' | '));
+        </script>
+    </div>
+    <!-- Table to display CSV data -->
+    <table id="tribute-table"></table>
+    <script src="app.js"></script>
+</body>
+</html>
