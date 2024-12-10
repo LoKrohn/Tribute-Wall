@@ -1,6 +1,6 @@
 /* General body styling */
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Montserrat', sans-serif;
     margin: 20px;
     text-align: center;
     color: #333;
@@ -37,18 +37,18 @@ body {
 #alphabet-nav a {
     margin: 0 8px;
     text-decoration: none;
-    color: #112b5b;
+    color: #223596;
     font-weight: bold;
     cursor: pointer;
 }
 
 #alphabet-nav a:hover {
-    color: #119ac8;
+    color: #5091cd; 
     text-decoration: underline;
 }
 
 /* Light blue background for every other row */
 #tribute-table tr:nth-child(even) {
-    background-color: #9fc8da; /* Light blue color */
+    background-color: #aebdd0; /* Light blue color */
 }
 

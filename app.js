@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .then(data => {
             const rows = parseCSV(data);
             const groupedData = groupEntries(rows);
-            const sortedData = sortByLastName(groupedData, 2); // Sort by Category 3 (index 2)
+            const sortedData = sortByLastName(groupedData, 1); // Sort by Category 2 (index 1)
             renderTable(sortedData, table);
             setupAlphabetNavigation(sortedData, table);
         })
@@ -37,10 +37,10 @@ function groupEntries(rows) {
         const row = rows[i];
         
         const donorName = row[0] ? row[0].split(";").join(", ") : ""; // Split semicolon-separated names into commas
-        const tributeName = row[2] ? row[2].split(";").join(", ") : ""; // Split semicolon-separated names into commas
-        const inHonorMemoryOf = row[1] || ""; // Keep the "In Honor/Memory Of:" column as is
+        const tributeName = row[1] ? row[1].split(";").join(", ") : ""; // Split semicolon-separated names into commas
+        const inHonorMemoryOf = row[2] || ""; // Keep the "In Honor/Memory Of:" column as is
 
-        groupedRows.push([donorName, inHonorMemoryOf, tributeName]);
+        groupedRows.push([donorName, tributeName, inHonorMemoryOf]);
     }
 
     return [header, ...groupedRows]; // Return new rows with the original header
@@ -69,9 +69,9 @@ function getLastWord(string) {
     return lastName;
 }
 
-// Render the table on the page
+// Render the table on the page with letter headers
 function renderTable(rows, table) {
-    table.innerHTML = "";
+    table.innerHTML = ""; // Clear existing table content
 
     const headerRow = document.createElement("tr");
     rows[0].forEach(headerText => {
@@ -81,9 +81,32 @@ function renderTable(rows, table) {
     });
     table.appendChild(headerRow);
 
-    rows.slice(1).forEach(row => {
-        const tableRow = document.createElement("tr");
+    let currentLetter = ""; // Track the current letter group
 
+    rows.slice(1).forEach(row => {
+        const lastName = getLastWord(row[1]); // Extract last name from Tribute Name column
+        const firstLetter = lastName.charAt(0).toUpperCase(); // Get the first letter of the last name
+
+        // Insert a header row for a new letter group
+        if (firstLetter !== currentLetter) {
+            currentLetter = firstLetter;
+
+            const letterRow = document.createElement("tr");
+            const letterCell = document.createElement("td");
+            letterCell.textContent = currentLetter;
+            letterCell.colSpan = row.length; // Span all columns
+            letterCell.style.backgroundColor = "#5091cd"; // CASPCA blue background
+            letterCell.style.color = "white"; // White text
+            letterCell.style.fontWeight = "bold"; // Bold text
+            letterCell.style.fontSize = "1.2em"; // Larger font size
+            letterCell.style.textAlign = "center"; // Center-align the text
+
+            letterRow.appendChild(letterCell);
+            table.appendChild(letterRow);
+        }
+
+        // Add the regular row for this entry
+        const tableRow = document.createElement("tr");
         row.forEach(cellText => {
             const tableCell = document.createElement("td");
             tableCell.textContent = cellText;
@@ -93,6 +116,7 @@ function renderTable(rows, table) {
         table.appendChild(tableRow);
     });
 }
+
 
 // Setup alphabetical navigation
 function setupAlphabetNavigation(rows, table) {
@@ -106,7 +130,7 @@ function setupAlphabetNavigation(rows, table) {
             const letter = link.dataset.letter;
 
             const matchIndex = body.findIndex(row => {
-                const lastName = getLastWord(row[2]);
+                const lastName = getLastWord(row[1]); // Updated to column index 1
                 return lastName.startsWith(letter);
             });
 
