@@ -4,12 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const table = document.getElementById("tribute-table");
 
     fetch(csvFilePath)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Network response was not ok " + response.statusText);
-            }
-            return response.text();
-        })
+        .then(response => response.text())
         .then(data => {
             const rows = parseCSV(data);
             const groupedData = groupEntries(rows);
@@ -17,33 +12,32 @@ document.addEventListener("DOMContentLoaded", () => {
             renderTable(sortedData, table);
             setupAlphabetNavigation(sortedData, table);
         })
-        .catch(error => {
-            console.error("Error fetching the CSV file:", error);
-        });
+        .catch(error => console.error("Error fetching the CSV file:", error));
 });
 
 // Parse CSV data into an array of rows
 function parseCSV(data) {
-    const lines = data.trim().split("\n"); // Split the CSV into rows
-    return lines.map(line => line.split(",").map(cell => cell.trim())); // Split each row into columns and trim whitespace
+    const lines = data.trim().split("\n"); 
+    return lines.map(line => line.split(",").map(cell => cell.trim()));
 }
 
 // Group multiple entries for specific columns into comma-separated strings
 function groupEntries(rows) {
     const header = rows[0]; // Extract header row
     const groupedRows = [];
-    
+
     for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
-        
-        const donorName = row[0] ? row[0].split(";").join(", ") : ""; // Split semicolon-separated names into commas
-        const tributeName = row[2] ? row[2].split(";").join(", ") : ""; // Split semicolon-separated names into commas
-        const inHonorMemoryOf = row[1] || ""; // Keep the "In Honor/Memory Of:" column as is
 
-        groupedRows.push([donorName, inHonorMemoryOf, tributeName]);
+        const donorName = row[0] ? row[0].split(";").join(", ") : ""; 
+        const tributeName = row[2] ? row[2].split(";").join(", ") : ""; 
+        const inHonorMemoryOf = row[1] || ""; 
+        const imageURLs = row[3] ? row[3].split(";") : []; // Allow multiple images, separated by ";"
+
+        groupedRows.push([donorName, inHonorMemoryOf, tributeName, imageURLs]);
     }
 
-    return [header, ...groupedRows]; // Return new rows with the original header
+    return [header, ...groupedRows];
 }
 
 // Sort rows by the last name in a specific column
@@ -54,7 +48,6 @@ function sortByLastName(rows, columnIndex) {
     const sortedBody = body.sort((a, b) => {
         const lastNameA = getLastWord(a[columnIndex]);
         const lastNameB = getLastWord(b[columnIndex]);
-
         return lastNameA.localeCompare(lastNameB);
     });
 
@@ -74,24 +67,29 @@ function renderTable(rows, table) {
     table.innerHTML = "";
 
     const headerRow = document.createElement("tr");
-    rows[0].forEach(headerText => {
+    rows[0].slice(0, 3).forEach(headerText => {  // Only include first 3 columns (skip "Image URL" header)
         const headerCell = document.createElement("th");
-        headerCell.textContent = headerText;
+        headerCell.textContent = headerText === "Image URL" ? "" : headerText; // Remove "Image URL" from header
         headerRow.appendChild(headerCell);
     });
+
+    // Add a blank header for the image column
+    const imageHeaderCell = document.createElement("th");
+    imageHeaderCell.textContent = ""; // Empty header for images
+    headerRow.appendChild(imageHeaderCell);
+
     table.appendChild(headerRow);
 
-    const alphabetHeaders = {}; // Store created alphabet header rows
+    const alphabetHeaders = {};
 
-    rows.slice(1).forEach((row, index) => {
-        const lastName = getLastWord(row[1]); // Last name is in column 2 (index 1)
-        const firstLetter = lastName[0].toUpperCase(); // Get the first letter
+    rows.slice(1).forEach(row => {
+        const lastName = getLastWord(row[1]);
+        const firstLetter = lastName[0]?.toUpperCase() || "#";
 
         if (!alphabetHeaders[firstLetter]) {
-            // Create a row with the first letter as the header
             const alphabetRow = document.createElement("tr");
             const alphabetCell = document.createElement("th");
-            alphabetCell.colSpan = rows[0].length;
+            alphabetCell.colSpan = 4; // Span across all 4 columns (including images)
             alphabetCell.style.textAlign = "center";
             alphabetCell.style.fontWeight = "bold";
             alphabetCell.style.backgroundColor = "#003366";
@@ -102,18 +100,34 @@ function renderTable(rows, table) {
             alphabetRow.appendChild(alphabetCell);
             table.appendChild(alphabetRow);
 
-            // Store the created header row to prevent duplicate rows
             alphabetHeaders[firstLetter] = true;
         }
 
         const tableRow = document.createElement("tr");
 
-        row.forEach(cellText => {
+        // Add donor name, honor/memory, and tribute name
+        row.slice(0, 3).forEach(cellText => {
             const tableCell = document.createElement("td");
             tableCell.textContent = cellText;
             tableRow.appendChild(tableCell);
         });
 
+        // Add the images in the same row
+        const imageCell = document.createElement("td");
+        row[3].forEach(url => {
+            if (url) {
+                const img = document.createElement("img");
+                img.src = url;
+                img.className = "honoree-image";
+                img.alt = "Honoree Image";
+                img.style.maxWidth = "100px"; // Adjust image size
+                img.style.margin = "5px";
+                img.onerror = function () { this.style.display = "none"; }; // Hide broken images
+                imageCell.appendChild(img);
+            }
+        });
+
+        tableRow.appendChild(imageCell); // Add image cell to row
         table.appendChild(tableRow);
     });
 }
@@ -131,13 +145,9 @@ function setupAlphabetNavigation(rows, table) {
             if (target) {
                 target.scrollIntoView({
                     behavior: "smooth",
-                    block: "start" // Align the header row at the top of the page
+                    block: "start"
                 });
             }
         });
     });
 }
-
-
-
-

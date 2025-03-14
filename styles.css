@@ -52,3 +52,8 @@ body {
     background-color: #aebdd0; /* Light blue color */
 }
 
+.honoree-image {
+    width: 300px;  /* Adjust as needed */
+    height: auto;  /* Maintains aspect ratio */
+    display: block;
+}
